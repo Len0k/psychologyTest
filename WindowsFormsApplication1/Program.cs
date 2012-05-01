@@ -31,7 +31,7 @@ class Character {
         pb.Location = c;
         pb.Size = new Size(56, 105);
         pb.BackColor = Color.Transparent;
-        pb.Image = (System.Drawing.Image)RiverTask.resourses.GetObject("_"+id.ToString());
+        pb.Image = (System.Drawing.Image)RiverTask.resourses.GetObject("_" + id.ToString());
         pb.Visible = true;
         pb.TabStop = false;
         pb.Tag = tag;
@@ -42,6 +42,7 @@ class Character {
 public class RiverTask : System.Windows.Forms.Form {
     private Character[] chars;
     private Boat boat;
+    public static bool finish = false;
     //private System.Windows.Forms.Label promptLabel;
 
     public RiverTask() {
@@ -83,7 +84,6 @@ public class RiverTask : System.Windows.Forms.Form {
     private void InitializeComponent() {
         this.Size = new Size(807, 500);
         ShowLabel("Hello!");
-        //resourses = new ComponentResourceManager(typeof(WindowsFormsApplication1.Properties.Resources));
         this.chars = new Character[8];
         boat = new Boat();
         boat.pb.BackColor = Color.Transparent;
@@ -172,7 +172,6 @@ public class RiverTask : System.Windows.Forms.Form {
     }
 
     private void boat_Click(object sender, EventArgs e) {
-        //if (boat.count == 0) return;//(CheckMove.CheckMoving(boat) != 0) return;
         int t = CheckMove.CheckMoving(boat);
         if (t == 2) {
             ShowWrongMove();
@@ -202,9 +201,29 @@ public class RiverTask : System.Windows.Forms.Form {
             ch2.pos = getPlace(ch2.coast);
             ch2.pb.Location = coord(ch2.pos);
             boat.id[1] = 0;
+            if (finish) Finish();
         }
     }
+    private void LFin_Click(object sender, EventArgs e) {
+        this.Close();
+    }
 
+    public void Finish() {
+        Label L = new Label();
+        L.Location = new Point(0, 0);
+        L.Size = new Size(500, 500);
+        L.BackColor = Color.Transparent;
+        L.ForeColor = Color.Tomato;
+        L.TextAlign = ContentAlignment.MiddleCenter;
+        string t = "Поздравляем, вы прошли тест!";
+        L.Font = new Font(System.Drawing.FontFamily.GenericSerif, 35);
+        if (exCounter != 0) { t += "\nЛишних ходов: " + exCounter.ToString(); }
+        if (erCounter != 0) { t += "\nОшибочных ходов: " + erCounter.ToString(); }
+        L.Text = t;
+        Controls.Clear();
+        Controls.Add(L);
+        L.Click+=new EventHandler(LFin_Click);
+    }
 }
 
 class Boat {
@@ -252,8 +271,7 @@ class Boat {
 
 class CheckMove {
     //7,4,1 - папа, мама, полицейский
-    //6,5,3,2,0 - сын1,сын2,дочь1,дочь2,хулиган (или как его там)
-    //(это номер бита, который соответствует персонажу)
+    //6,5,3,2,0 - сын1,сын2,дочь1,дочь2,хулиган
     //Последовательность ходов
     //000 000 00   0    +3
     //000 000 11   3    -2
@@ -273,7 +291,6 @@ class CheckMove {
     //111 111 10   254  -2
     //111 111 00   252  +3
     //111 111 11   255
-    //public List<int> OldPeople;// = new List<int> { 1 << 7, 1 << 4, 1 << 1 };
     public static int[,] MoveSequence = //new int[,] 
     {
         { 3, -2, 66, -3, 160, -128, 144, -16, 3, -128, 144, -16, 24, -3, 6, -2, 3 },
@@ -289,21 +306,13 @@ class CheckMove {
     public static int CurrentState = 0;
     public static int CurrentWay = 0;
     static bool IsBoatCorrect(Boat boat) {
-        //List<int> YoungPeople = new List<int> { 1 << 6, 1 << 5, 1 << 3, 1 << 2, 1 << 0, 0};
         List<int> OldPeople = new List<int> { 1 << 7, 1 << 4, 1 << 1 };
-        //if (YoungPeople.Contains(boat.id[0]) && (boat.count == 1 ? true : (YoungPeople.Contains(boat.id[1]))))
-        //if (YoungPeople.Contains(boat.id[0]) && YoungPeople.Contains(boat.id[1]))
-        //    return false;//посадите в лодку хотя бы одного взрослого
-        //return true;
         return (OldPeople.Contains(boat.id[0]) || OldPeople.Contains(boat.id[1]));
     }
-    public static int CheckMoving(Boat vodka)//я не помню че сюда передается, но надеюсь, что Ид персонажей, которые я надеюсь совпадают с теми которые написаны выше
-    {
+    public static int CheckMoving(Boat vodka) {
         if (!IsBoatCorrect(vodka))
             return 2;//аасссссипка
-        int trololo = vodka.id[0] + vodka.id[1];//(1 << vodka.id[0]) + (vodka.count == 2 ? (1 << vodka.id[1]) : 0);
-        //окай
-        //if (vodka.coast == 1)
+        int trololo = vodka.id[0] + vodka.id[1];
         trololo = (1 - vodka.coast * 2) * trololo;//надеюсь 0 - это начальный берег, а 1 - яннп
         int tmpVariable = CurrentState + trololo;
         String о_О = Convert.ToString(tmpVariable, 2);
@@ -311,19 +320,17 @@ class CheckMove {
         if ((о_О[6] != о_О[7] && tmpVariable != 1 && tmpVariable != 254) || (о_О[3] != о_О[0] && ((о_О[0] != о_О[1]) || (о_О[0] != о_О[2]) || (о_О[3] != о_О[4]) || (о_О[3] != о_О[5]))))
             return 2;//некоректный ход
         int tmpCW = CurrentWay;
-        while (tmpCW < 8)
-        {
-            if (trololo == MoveSequence[tmpCW, CurrentStep])
-            {
+        while (tmpCW < 8) {
+            if (trololo == MoveSequence[tmpCW, CurrentStep]) {
                 CurrentWay = tmpCW;
                 break;
             }
             tmpCW++;
         }
-        if (trololo == MoveSequence[CurrentWay, CurrentStep])
-        {
+        if (trololo == MoveSequence[CurrentWay, CurrentStep]) {
             CurrentState += trololo;
             CurrentStep++;
+            if (CurrentState == 255) { RiverTask.finish = true; }
             return 0;//правильный ход
         }
         return 1;//лишний ход
