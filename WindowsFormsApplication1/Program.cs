@@ -257,49 +257,75 @@ class CheckMove {
     //Последовательность ходов
     //000 000 00   0    +3
     //000 000 11   3    -2
-    //000 000 01   1    +66
+    //000 000 01   1    +66 (+34)   +10 (+6)
     //010 000 11   67   -3
-    //010 000 00   64   +160
-    //111 000 00   224  -128
+    //010 000 00   64   +160 (+192) +20 (+24)
+    //111 000 00   224  -128        -16
     //011 000 00   96   +144
-    //111 100 00   240  -16
+    //111 100 00   240  -16         -128
     //111 000 00   224  +3
-    //111 000 11   227  -128
+    //111 000 11   227  -128        -16
     //011 000 11   99   +144
-    //111 100 11   243  -16
-    //111 000 11   227  +24
+    //111 100 11   243  -16         -128
+    //111 000 11   227  +24 (+20)   +192 (+160)
     //111 110 11   251  -3
-    //111 110 00   248  +6
+    //111 110 00   248  +6 (+10)    +34 (+66)
     //111 111 10   254  -2
     //111 111 00   252  +3
     //111 111 11   255
     //public List<int> OldPeople;// = new List<int> { 1 << 7, 1 << 4, 1 << 1 };
-    public static int[] MoveSequence = new int[] { 3, -2, 66, -3, 160, -128, 144, -16, 3, -128, 144, -16, 24, -3, 6, -2, 3 };
+    public static int[,] MoveSequence = //new int[,] 
+    {
+        { 3, -2, 66, -3, 160, -128, 144, -16, 3, -128, 144, -16, 24, -3, 6, -2, 3 },
+        { 3, -2, 66, -3, 160, -128, 144, -16, 3, -128, 144, -16, 20, -3, 10, -2, 3 },
+        { 3, -2, 34, -3, 192, -128, 144, -16, 3, -128, 144, -16, 24, -3, 6, -2, 3 },
+        { 3, -2, 34, -3, 192, -128, 144, -16, 3, -128, 144, -16, 20, -3, 10, -2, 3 },
+        { 3, -2, 10, -3, 20, -16, 144, -128, 3, -16, 144, -128, 192, -3, 34, -2, 3 },
+        { 3, -2, 10, -3, 20, -16, 144, -128, 3, -16, 144, -128, 160, -3, 66, -2, 3 },
+        { 3, -2, 6, -3, 24, -16, 144, -128, 3, -16, 144, -128, 192, -3, 34, -2, 3 },
+        { 3, -2, 6, -3, 24, -16, 144, -128, 3, -16, 144, -128, 160, -3, 66, -2, 3 },
+    };
     public static int CurrentStep = 0;
     public static int CurrentState = 0;
+    public static int CurrentWay = 0;
     static bool IsBoatCorrect(Boat boat) {
-        List<int> YoungPeople = new List<int> { 1 << 6, 1 << 5, 1 << 3, 1 << 2, 1 << 0 };
-        if (YoungPeople.Contains(boat.id[0]) && (boat.count == 1 ? true : (YoungPeople.Contains(boat.id[1]))))
-            return false;//посадите в лодку хотя бы одного взрослого
-        return true;
+        //List<int> YoungPeople = new List<int> { 1 << 6, 1 << 5, 1 << 3, 1 << 2, 1 << 0, 0};
+        List<int> OldPeople = new List<int> { 1 << 7, 1 << 4, 1 << 1 };
+        //if (YoungPeople.Contains(boat.id[0]) && (boat.count == 1 ? true : (YoungPeople.Contains(boat.id[1]))))
+        //if (YoungPeople.Contains(boat.id[0]) && YoungPeople.Contains(boat.id[1]))
+        //    return false;//посадите в лодку хотя бы одного взрослого
+        //return true;
+        return (OldPeople.Contains(boat.id[0]) || OldPeople.Contains(boat.id[1]));
     }
     public static int CheckMoving(Boat vodka)//я не помню че сюда передается, но надеюсь, что Ид персонажей, которые я надеюсь совпадают с теми которые написаны выше
     {
         if (!IsBoatCorrect(vodka))
             return 2;//аасссссипка
         int trololo = vodka.id[0] + vodka.id[1];//(1 << vodka.id[0]) + (vodka.count == 2 ? (1 << vodka.id[1]) : 0);
-        if (vodka.coast == 1)
-            trololo = 0 - trololo;//надеюсь 0 - это начальный берег, а 1 - яннп
-        if (trololo == MoveSequence[CurrentStep]) {
+        //окай
+        //if (vodka.coast == 1)
+        trololo = (1 - vodka.coast * 2) * trololo;//надеюсь 0 - это начальный берег, а 1 - яннп
+        int tmpVariable = CurrentState + trololo;
+        String о_О = Convert.ToString(tmpVariable, 2);
+        о_О = о_О.PadLeft(8, '0');
+        if ((о_О[6] != о_О[7] && tmpVariable != 1 && tmpVariable != 254) || (о_О[3] != о_О[0] && ((о_О[0] != о_О[1]) || (о_О[0] != о_О[2]) || (о_О[3] != о_О[4]) || (о_О[3] != о_О[5]))))
+            return 2;//некоректный ход
+        int tmpCW = CurrentWay;
+        while (tmpCW < 8)
+        {
+            if (trololo == MoveSequence[tmpCW, CurrentStep])
+            {
+                CurrentWay = tmpCW;
+                break;
+            }
+            tmpCW++;
+        }
+        if (trololo == MoveSequence[CurrentWay, CurrentStep])
+        {
             CurrentState += trololo;
             CurrentStep++;
             return 0;//правильный ход
         }
-        int tmpVariable = CurrentState + trololo;
-        String о_О = Convert.ToString(tmpVariable, 2);
-        while (о_О.Length < 8) { о_О = "0" + о_О; }
-        if (о_О[0] != о_О[4] && о_О[0] != о_О[5] && о_О[3] != о_О[1] && о_О[3] != о_О[2] && о_О[6] == о_О[7])
-            return 1;//лишний ход
-        return 2;//некоректный ход
+        return 1;//лишний ход
     }
 }
